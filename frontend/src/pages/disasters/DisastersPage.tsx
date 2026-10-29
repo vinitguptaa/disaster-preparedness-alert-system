@@ -164,6 +164,7 @@ function DisastersPage() {
           {
             body:
               'You will receive notifications when a new official disaster alert is detected for your location.',
+            icon: '/favicon.svg',
           },
         )
 
@@ -263,7 +264,7 @@ function DisastersPage() {
         ) {
 
           new Notification(
-            `🚨 ${alert.event || 'Official Disaster Alert'}`,
+            `DisasterSafe: ${alert.event || 'Official Alert'}`,
             {
               body:
                 alert.headline ||
@@ -272,6 +273,7 @@ function DisastersPage() {
                   currentResolvedLocation.district ||
                   'your location'
                 }.`,
+              icon: '/favicon.svg',
             },
           )
         }
@@ -723,7 +725,7 @@ function DisastersPage() {
               <h2 className="mt-2 text-xl font-bold text-gray-900">
 
                 {location
-                  ? 'Current location detected 📍'
+                  ? 'Current location connected'
                   : 'Location not detected'}
 
               </h2>
@@ -817,7 +819,7 @@ function DisastersPage() {
 
               {locationLoading
                 ? 'Getting location...'
-                : '📍 Use My Current Location'}
+                : 'Use my current location'}
 
             </button>
 
@@ -882,28 +884,34 @@ function DisastersPage() {
             </div>
 
 
-            <div className="flex items-center gap-3">
+            <div className="alert-controls">
+
+              <button
+                onClick={handleGetLocation}
+                disabled={locationLoading}
+                className="location-control"
+              >
+                <span className="control-symbol">⌖</span>
+                {locationLoading ? 'Locating…' : location ? 'Update location' : 'Use my location'}
+              </button>
 
               <button
                 onClick={() => location && fetchOfficialAlerts(location, resolvedLocation, true, false)}
                 disabled={!location || alertLoading}
-                className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="refresh-control"
               >
-                {alertLoading ? 'Checking…' : 'Refresh now'}
+                <span className="control-symbol">↻</span>{alertLoading ? 'Checking…' : 'Refresh'}
               </button>
 
               <button
                 onClick={enableNotifications}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                disabled={!location}
+                className={notificationsEnabled ? 'notification-control enabled' : 'notification-control'}
               >
                 {notificationsEnabled
-                  ? '🔔 Notifications Enabled'
-                  : '🔔 Enable Alert Notifications'}
+                  ? <><span className="control-symbol">✓</span> Alerts on</>
+                  : <><span className="control-symbol">◌</span> Enable alerts</>}
               </button>
-
-              <div className="text-4xl">
-                🚨
-              </div>
 
             </div>
 
@@ -913,7 +921,7 @@ function DisastersPage() {
           {lastAlertCheck && (
 
             <p className="mt-3 text-xs text-gray-500">
-              🔄 Auto-checking every 60 seconds.
+              Monitoring every 60 seconds.
               Last checked:{' '}
               {lastAlertCheck.toLocaleTimeString()}
             </p>
