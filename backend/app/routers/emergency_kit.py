@@ -85,3 +85,29 @@ def update_emergency_kit_item(
     db.refresh(item)
 
     return item
+
+
+@router.delete(
+    "/{item_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_emergency_kit_item(
+    item_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    item = db.scalar(
+        select(EmergencyKitItem).where(
+            EmergencyKitItem.id == item_id,
+            EmergencyKitItem.user_id == user_id,
+        )
+    )
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency kit item not found",
+        )
+
+    db.delete(item)
+    db.commit()

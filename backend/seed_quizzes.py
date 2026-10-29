@@ -184,10 +184,76 @@ def seed_quizzes():
             ),
         ]
 
-        db.add_all([flood, earthquake, cyclone])
+        # -------------------------
+        # All-hazards decision practice
+        # -------------------------
+        all_hazards = Quiz(
+            title="Emergency Decision Practice",
+            description="Short real-world scenarios that build calm, safe choices across disasters.",
+            disaster_type="All hazards",
+        )
+
+        all_hazards.questions = [
+            QuizQuestion(
+                question="An official alert and a viral social-media post give different evacuation instructions. What should you do first?",
+                option_a="Follow the post because it was shared first",
+                option_b="Check the official alert source or local authority channel",
+                option_c="Wait until friends agree on an answer",
+                option_d="Share both messages widely",
+                correct_option="B",
+                explanation="Official authorities can confirm the affected area, timing, and instructions. Do not amplify unverified information during an emergency.",
+                points=10,
+            ),
+            QuizQuestion(
+                question="Your family cannot reach each other by phone after an emergency. What plan should already be in place?",
+                option_a="A meeting place and an out-of-area contact",
+                option_b="A promise to keep calling repeatedly",
+                option_c="A social-media group only",
+                option_d="No plan is needed if everyone knows the area",
+                correct_option="A",
+                explanation="A known meeting point and a trusted contact reduce confusion when networks are overloaded or local travel is disrupted.",
+                points=10,
+            ),
+            QuizQuestion(
+                question="Which action best preserves mobile networks during a widespread emergency?",
+                option_a="Make long calls to update every contact",
+                option_b="Repeatedly refresh social media",
+                option_c="Send a short text message when possible",
+                option_d="Stream live video from the affected area",
+                correct_option="C",
+                explanation="Short messages use less network capacity and are more likely to get through when voice networks are congested.",
+                points=10,
+            ),
+            QuizQuestion(
+                question="You are told to evacuate. Which item should be prioritised if time is limited?",
+                option_a="Large furniture",
+                option_b="Emergency medicines, identification and water",
+                option_c="Decorative valuables only",
+                option_d="Heavy appliances",
+                correct_option="B",
+                explanation="Prioritise life-safety essentials and documents you cannot easily replace; leave early rather than packing extensively.",
+                points=10,
+            ),
+            QuizQuestion(
+                question="What is the safest way to use an alert app during a crisis?",
+                option_a="Treat every weather estimate as an evacuation order",
+                option_b="Use it to find verified notices, then follow local official instructions",
+                option_c="Assume no alert means every hazard is impossible",
+                option_d="Ignore authorities once the app is open",
+                correct_option="B",
+                explanation="Apps help organise information, but emergency decisions should follow verified local authorities and changing on-the-ground conditions.",
+                points=10,
+            ),
+        ]
+
+        db.add_all([flood, earthquake, cyclone, all_hazards])
         db.commit()
 
-        print("Successfully added 3 quizzes with 15 questions.")
+        # The result screen should teach, not merely mark answers right or wrong.
+        from update_quiz_explanations import update_explanations
+        update_explanations()
+
+        print("Successfully added 4 quizzes with 20 questions.")
 
     except Exception as error:
         db.rollback()

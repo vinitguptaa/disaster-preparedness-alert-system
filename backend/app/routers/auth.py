@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -13,6 +13,10 @@ router = APIRouter(
     prefix="/api/auth",
     tags=["Authentication"],
 )
+
+
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
 
 
 @router.post(
@@ -30,8 +34,9 @@ def signup(
             detail="Passwords do not match",
         )
 
+    email = _normalize_email(data.email)
     existing_user = db.scalar(
-        select(User).where(User.email == data.email)
+        select(User).where(func.lower(User.email) == email)
     )
 
     if existing_user:
@@ -41,8 +46,8 @@ def signup(
         )
 
     user = User(
-        full_name=data.full_name,
-        email=data.email,
+        full_name=data.full_name.strip(),
+        email=email,
         password_hash=hash_password(data.password),
     )
 
@@ -58,14 +63,12 @@ def login(
     data: LoginRequest,
     db: Session = Depends(get_db),
 ):
+    email = _normalize_email(data.email)
     user = db.scalar(
-        select(User).where(User.email == data.email)
+        select(User).where(func.lower(User.email) == email)
     )
 
-    if not user or not verify_password(
-        data.password,
-        user.password_hash,
-    ):
+    if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -101,8 +104,8 @@ def get_me(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired authentication token",
         )
 
     return user

@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../../services/api'
+import api, { getApiErrorMessage } from '../../services/api'
 
 type FamilyPlan = {
   id: number
@@ -59,11 +60,8 @@ function FamilyEmergencyPlanPage() {
 
       setPlan(response.data)
       setMessage(plan ? 'Family plan updated successfully!' : 'Family plan saved successfully!')
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          'Failed to save family emergency plan.',
-      )
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, 'Failed to save family emergency plan.'))
     } finally {
       setSaving(false)
     }

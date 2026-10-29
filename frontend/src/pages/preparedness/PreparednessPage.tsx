@@ -2,245 +2,66 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
 
-function PreparednessPage() {
-  type KitItem = {
-    id: number
-    item_name: string
-    is_completed: boolean
-  }
+type KitItem = { id: number; item_name: string; is_completed: boolean }
+type Contact = { id: number }
+type FamilyPlan = { id: number; meeting_point: string | null; emergency_contact_name: string | null }
 
+const essentials = [
+  ['Water & food', 'Keep at least three days of drinking water and shelf-stable food.'],
+  ['Medicines', 'Keep prescriptions, copies and essential medical information ready.'],
+  ['Light & power', 'Add a torch, batteries, power bank and a battery radio.'],
+]
+
+function PreparednessPage() {
   const [items, setItems] = useState<KitItem[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [plan, setPlan] = useState<FamilyPlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState<number | null>(null)
+  const [newItem, setNewItem] = useState('')
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await api.get('/api/emergency-kit')
-        setItems(response.data)
-      } catch (error) {
-        console.error('Failed to load emergency kit:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchItems()
+    Promise.allSettled([api.get<KitItem[]>('/api/emergency-kit'), api.get<Contact[]>('/api/emergency-contacts'), api.get<FamilyPlan | null>('/api/family-plan')]).then(([kit, savedContacts, familyPlan]) => {
+      if (kit.status === 'fulfilled') setItems(kit.value.data)
+      if (savedContacts.status === 'fulfilled') setContacts(savedContacts.value.data)
+      if (familyPlan.status === 'fulfilled') setPlan(familyPlan.value.data)
+    }).finally(() => setLoading(false))
   }, [])
 
-  const completedItems = items.filter(
-    (item) => item.is_completed,
-  ).length
+  const kitReady = items.filter((item) => item.is_completed).length
+  const planReady = Boolean(plan?.meeting_point && plan?.emergency_contact_name)
+  const scoreParts = [items.length > 0 && kitReady === items.length, contacts.length > 0, planReady]
+  const readiness = Math.round((scoreParts.filter(Boolean).length / scoreParts.length) * 100)
+  const nextStep = !items.length || kitReady < items.length ? ['Finish your go-bag', 'A packed kit saves time when you need to leave quickly.', '/preparedness'] : !contacts.length ? ['Add a trusted contact', 'Choose someone outside your immediate area who can coordinate your family.', '/emergency-contacts'] : !planReady ? ['Choose a meeting place', 'A familiar backup location prevents confusion if phones are unavailable.', '/family-plan'] : ['Review your plan together', 'Practice where to meet and how to contact one another twice a year.', '/family-plan']
 
-  const preparednessScore =
-    items.length === 0
-      ? 0
-      : Math.round((completedItems / items.length) * 100)
+  const toggle = async (item: KitItem) => {
+    setUpdating(item.id)
+    try { const response = await api.patch<KitItem>(`/api/emergency-kit/${item.id}`, { is_completed: !item.is_completed }); setItems((current) => current.map((entry) => entry.id === item.id ? response.data : entry)) } finally { setUpdating(null) }
+  }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-bold text-gray-900">
-            Disaster<span className="text-blue-600">Safe</span>
-          </Link>
+  const addItem = async (itemName = newItem) => {
+    const item_name = itemName.trim()
+    if (!item_name) return
+    setAdding(true)
+    try {
+      const response = await api.post<KitItem>('/api/emergency-kit', { item_name })
+      setItems((current) => [...current, response.data])
+      setNewItem('')
+    } finally { setAdding(false) }
+  }
 
-          <Link
-            to="/dashboard"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-      </header>
+  const removeItem = async (item: KitItem) => {
+    setUpdating(item.id)
+    try { await api.delete(`/api/emergency-kit/${item.id}`); setItems((current) => current.filter((entry) => entry.id !== item.id)) } finally { setUpdating(null) }
+  }
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        {/* Page Heading */}
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            Preparedness
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            Be ready before disaster strikes
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            Build your emergency plan, prepare your emergency kit, and improve
-            your preparedness score.
-          </p>
-        </div>
-
-        {/* Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-
-          {/* Emergency Kit Intro */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="text-3xl">🎒</div>
-
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
-              Emergency Kit
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Create and manage your essential emergency supplies checklist.
-            </p>
-
-            <button
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              View Checklist
-            </button>
-          </div>
-
-          {/* Emergency Kit Checklist */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="text-3xl">🎒</div>
-
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
-              Emergency Kit
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Your emergency supplies checklist.
-            </p>
-
-            <div className="mt-5">
-              {loading ? (
-                <p className="text-sm text-gray-500">
-                  Loading checklist...
-                </p>
-              ) : items.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  No items added yet.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <label
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-lg border p-3"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={item.is_completed}
-                        onChange={async () => {
-                          try {
-                            const response = await api.patch(
-                              `/api/emergency-kit/${item.id}`,
-                              {
-                                is_completed: !item.is_completed,
-                              },
-                            )
-
-                            setItems((currentItems) =>
-                              currentItems.map((currentItem) =>
-                                currentItem.id === item.id
-                                  ? response.data
-                                  : currentItem,
-                              ),
-                            )
-                          } catch (error) {
-                            console.error(
-                              'Failed to update emergency kit item:',
-                              error,
-                            )
-                          }
-                        }}
-                        className="h-4 w-4"
-                      />
-
-                      <span
-                        className={`text-sm font-medium ${
-                          item.is_completed
-                            ? 'text-gray-400 line-through'
-                            : 'text-gray-700'
-                        }`}
-                      >
-                        {item.item_name}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Preparedness Score */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="text-3xl">📊</div>
-
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
-              Preparedness Score
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Track how prepared you are and discover areas that need
-              improvement.
-            </p>
-
-            <div className="mt-5 text-4xl font-bold text-blue-600">
-              {preparednessScore}%
-            </div>
-
-            <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-200">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all"
-                style={{
-                  width: `${preparednessScore}%`,
-                }}
-              />
-            </div>
-
-            <p className="mt-3 text-sm text-gray-500">
-              {completedItems} of {items.length} kit items completed
-            </p>
-          </div>
-
-          {/* Family Emergency Plan */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="text-3xl">👨‍👩‍👧‍👦</div>
-
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
-              Family Emergency Plan
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Plan where your family will meet and who to contact during an
-              emergency.
-            </p>
-
-            <Link
-              to="/family-plan"
-              className="mt-5 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              Create Family Plan →
-            </Link>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-  <div className="text-3xl">📞</div>
-
-  <h2 className="mt-4 text-xl font-bold text-gray-900">
-    Emergency Contacts
-  </h2>
-
-  <p className="mt-2 text-sm text-gray-600">
-    Save important people you can contact during an emergency.
-  </p>
-
-  <Link
-    to="/emergency-contacts"
-    className="mt-5 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-  >
-    Manage Contacts →
-  </Link>
-</div>
-
-        </div>
-      </main>
-    </div>
-  )
+  return <section className="readiness-page">
+    <div className="readiness-hero"><div><p className="section-label">Your readiness plan</p><h1>Preparation turns panic<br />into <em>practical action.</em></h1><p>Keep the few decisions that matter most ready before an alert arrives: supplies, people, and a place to meet.</p></div><div className="readiness-score" aria-label={`${readiness}% prepared`}><span>Readiness</span><strong>{readiness}<small>%</small></strong><div><i style={{ width: `${readiness}%` }} /></div><p>{scoreParts.filter(Boolean).length} of 3 foundations in place</p></div></div>
+    <section className="next-action"><div className="next-action-icon">→</div><div><span>Recommended next step</span><h2>{nextStep[0]}</h2><p>{nextStep[1]}</p></div><Link to={nextStep[2]}>Do this now</Link></section>
+    <div className="readiness-grid"><article className="readiness-card kit-card"><div className="card-heading"><div><span className="section-label">Go-bag checklist</span><h2>Ready-to-grab essentials</h2></div><b>{kitReady}/{items.length || '—'}</b></div><form className="kit-add" onSubmit={(event) => { event.preventDefault(); addItem() }}><input value={newItem} onChange={(event) => setNewItem(event.target.value)} maxLength={100} placeholder="Add an item, e.g. prescription medicine" aria-label="New go-bag item" /><button disabled={adding || !newItem.trim()}>{adding ? 'Adding…' : 'Add item'}</button></form>{loading ? <p className="muted-copy">Loading your checklist…</p> : items.length ? <div className="kit-list">{items.map((item) => <div className={item.is_completed ? 'kit-row done' : 'kit-row'} key={item.id}><button onClick={() => toggle(item)} disabled={updating === item.id} aria-label={`Mark ${item.item_name} ${item.is_completed ? 'not ready' : 'ready'}`}><i>{item.is_completed ? '✓' : ''}</i><span>{item.item_name}</span><small>{item.is_completed ? 'Ready' : 'Mark ready'}</small></button><button className="remove-kit-item" onClick={() => removeItem(item)} disabled={updating === item.id} aria-label={`Remove ${item.item_name}`}>×</button></div>)}</div> : <div className="empty-readiness"><p>Start with water, medicines, a torch, and copies of essential documents.</p><div className="quick-adds">{['Water', 'Torch and batteries', 'First-aid supplies'].map((item) => <button key={item} onClick={() => addItem(item)} disabled={adding}>+ {item}</button>)}</div></div>}</article><article className="readiness-card why-card"><span className="section-label">Why this matters</span><h2>When systems are busy, your plan works offline.</h2><p>During a disaster, networks may be congested and choices become harder. A written plan and a small kit help your household act immediately.</p><ul>{essentials.map(([title, description]) => <li key={title}><b>✓</b><div><strong>{title}</strong><span>{description}</span></div></li>)}</ul></article></div>
+    <section className="foundation-section"><div><p className="section-label">The three foundations</p><h2>Useful long before an emergency.</h2></div><div className="foundation-grid"><Link to="/family-plan"><span>01</span><b>Family plan</b><p>{planReady ? 'Meeting place and contact saved' : 'Agree where to meet and who to call'}</p><i>{planReady ? 'Ready ✓' : 'Set up →'}</i></Link><Link to="/emergency-contacts"><span>02</span><b>Trusted contacts</b><p>{contacts.length ? `${contacts.length} contact${contacts.length === 1 ? '' : 's'} available` : 'Save people you can reach quickly'}</p><i>{contacts.length ? 'Ready ✓' : 'Add contact →'}</i></Link><Link to="/disasters"><span>03</span><b>Live alerts</b><p>Use your location to check verified government warnings.</p><i>Open monitoring →</i></Link></div></section>
+  </section>
 }
 
 export default PreparednessPage

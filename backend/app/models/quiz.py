@@ -86,9 +86,10 @@ class QuizQuestion(Base):
         nullable=False,
     )
     explanation: Mapped[str] = mapped_column(
-    String(1000),
-    nullable=False,
-)
+        String(1000),
+        nullable=False,
+        default="",
+    )
 
     points: Mapped[int] = mapped_column(
         Integer,

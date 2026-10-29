@@ -13,6 +13,7 @@ import FamilyEmergencyPlanPage from './pages/preparedness/FamilyEmergencyPlanPag
 import EmergencyContactsPage from './pages/resources/EmergencyContactsPage'
 import QuizTakingPage from './pages/quizzes/QuizTakingPage'
 import QuizHistoryPage from './pages/quizzes/QuizHistoryPage'
+import AppShell from './components/AppShell'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('access_token')
@@ -21,7 +22,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  return children
+  return <AppShell>{children}</AppShell>
 }
 
 function App() {

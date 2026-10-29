@@ -1,138 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../../services/api'
+import api, { getApiErrorMessage } from '../../services/api'
 
-type Quiz = {
-  id: number
-  title: string
-  description: string
-  disaster_type: string
-}
+type Quiz = { id: number; title: string; description: string; disaster_type: string }
+const iconFor = (type: string) => ({ Flood: '≈', Earthquake: '⌂', Cyclone: '◌', 'All hazards': '◈' }[type] ?? '?')
 
 function QuizPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    const fetchQuizzes = async () => {
-      try {
-        const response = await api.get('/api/quizzes')
-        setQuizzes(response.data)
-      } catch (err: any) {
-        setError(
-          err.response?.data?.detail ||
-            'Failed to load quizzes.',
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchQuizzes()
-  }, [])
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            to="/"
-            className="text-xl font-bold text-gray-900"
-          >
-            Disaster<span className="text-blue-600">Safe</span>
-          </Link>
-
-          <Link
-            to="/dashboard"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            Knowledge
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            Disaster Safety Quizzes
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            Test your knowledge and improve your disaster preparedness.
-          </p>
-        </div>
-
-        {loading && (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-600">
-              Loading quizzes...
-            </p>
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-2xl bg-red-50 p-6 text-red-700">
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && quizzes.length === 0 && (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-600">
-              No quizzes available yet.
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && quizzes.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {quizzes.map((quiz) => (
-              <div
-                key={quiz.id}
-                className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                <div className="text-4xl">
-                  {quiz.disaster_type === 'Flood'
-                    ? '🌊'
-                    : quiz.disaster_type === 'Earthquake'
-                      ? '🏚️'
-                      : quiz.disaster_type === 'Cyclone'
-                        ? '🌀'
-                        : '🚨'}
-                </div>
-
-                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  {quiz.disaster_type}
-                </p>
-
-                <h2 className="mt-2 text-xl font-bold text-gray-900">
-                  {quiz.title}
-                </h2>
-
-                <p className="mt-3 text-sm leading-6 text-gray-600">
-                  {quiz.description}
-                </p>
-
-                <Link
-                  to={`/quizzes/${quiz.id}`}
-                  className="mt-6 inline-block rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Start Quiz →
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  )
+  useEffect(() => { api.get<Quiz[]>('/api/quizzes').then((response) => setQuizzes(response.data)).catch((reason: unknown) => setError(getApiErrorMessage(reason, 'Unable to load knowledge checks.'))).finally(() => setLoading(false)) }, [])
+  return <section className="quiz-page"><div className="quiz-hero"><div><p className="section-label">Knowledge checks</p><h1>Practise the choices<br />that matter <em>under pressure.</em></h1><p>Short scenario-based quizzes with explanations. Learn the reason behind every safe action, not just the answer.</p></div><Link to="/quiz-history" className="quiz-history-link">View my attempts →</Link></div><div className="quiz-how"><b>How it works</b><span>01 Pick a hazard</span><span>02 Answer five scenarios</span><span>03 Review practical explanations</span></div>{loading && <div className="quiz-empty">Loading knowledge checks…</div>}{error && <div className="quiz-empty quiz-error">{error}</div>}{!loading && !error && !quizzes.length && <div className="quiz-empty">No quizzes are available yet. Run <code>python seed_quizzes.py</code> from the backend folder.</div>}{!loading && !error && quizzes.length > 0 && <div className="quiz-grid">{quizzes.map((quiz, index) => <article className="quiz-card" key={quiz.id}><span>0{index + 1}</span><div className="quiz-icon">{iconFor(quiz.disaster_type)}</div><p>{quiz.disaster_type}</p><h2>{quiz.title}</h2><div className="quiz-card-bottom"><small>5 questions · explanations included</small><Link to={`/quizzes/${quiz.id}`}>Start practice <b>→</b></Link></div></article>)}</div>}</section>
 }
 
 export default QuizPage

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import api from '../../services/api'
@@ -190,7 +190,7 @@ function DisastersPage() {
   // FETCH OFFICIAL ALERTS
   // =======================================================
 
-  const fetchOfficialAlerts = async (
+  const fetchOfficialAlerts = useCallback(async (
     currentLocation: UserLocation,
     currentResolvedLocation: ResolvedLocation,
     showLoading = true,
@@ -302,7 +302,7 @@ function DisastersPage() {
         setAlertLoading(false)
       }
     }
-  }
+  }, [notificationsEnabled])
 
 
   // =======================================================
@@ -478,12 +478,7 @@ function DisastersPage() {
       )
     }
 
-  }, [
-    location,
-    resolvedLocation.district,
-    resolvedLocation.state,
-    notificationsEnabled,
-  ])
+  }, [location, resolvedLocation, fetchOfficialAlerts])
 
 
   // =======================================================
@@ -692,19 +687,19 @@ function DisastersPage() {
         <div className="mb-8">
 
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            Disaster Information
+            Live monitoring centre
           </p>
 
 
           <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            Stay informed about disasters
+            Verified alerts, matched to your location
           </h1>
 
 
           <p className="mt-2 max-w-2xl text-gray-600">
-            Monitor current weather, retrieve your
-            location, and check official government
-            disaster alerts.
+            Start with your location. We check the official SACHET / NDMA
+            feed, show only relevant notices, and never turn weather data
+            into a government warning.
           </p>
 
         </div>
@@ -888,6 +883,14 @@ function DisastersPage() {
 
 
             <div className="flex items-center gap-3">
+
+              <button
+                onClick={() => location && fetchOfficialAlerts(location, resolvedLocation, true, false)}
+                disabled={!location || alertLoading}
+                className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {alertLoading ? 'Checking…' : 'Refresh now'}
+              </button>
 
               <button
                 onClick={enableNotifications}

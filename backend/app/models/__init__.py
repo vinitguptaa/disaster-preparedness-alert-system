@@ -3,6 +3,7 @@ from app.models.emergency_kit import EmergencyKitItem
 from app.models.family_plan import FamilyEmergencyPlan
 from app.models.quiz import Quiz, QuizAttempt, QuizQuestion
 from app.models.user import User
+from app.models.alert import Alert, AlertSubscription
 
 __all__ = [
     "User",
@@ -12,4 +13,6 @@ __all__ = [
     "Quiz",
     "QuizQuestion",
     "QuizAttempt",
+    "Alert",
+    "AlertSubscription",
 ]

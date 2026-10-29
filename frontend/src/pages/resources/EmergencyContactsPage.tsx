@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../../services/api'
+import api, { getApiErrorMessage } from '../../services/api'
 
 type EmergencyContact = {
   id: number
@@ -55,11 +56,8 @@ function EmergencyContactsPage() {
       setRelationship('')
 
       setMessage('Emergency contact added successfully!')
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          'Failed to add emergency contact.',
-      )
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, 'Failed to add emergency contact.'))
     } finally {
       setSaving(false)
     }

@@ -1,97 +1,24 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+type Guide = { icon: string; title: string; risk: string; before: string[]; during: string[]; after: string[] }
+const guides: Guide[] = [
+  { icon: '≈', title: 'Flood', risk: 'Never walk or drive through floodwater.', before: ['Save official warnings and identify higher ground.', 'Move documents, medicines and power banks above likely water level.'], during: ['Move to higher ground early; avoid bridges and underpasses.', 'Turn around if water covers the road.'], after: ['Return only when authorities say it is safe.', 'Avoid downed lines and contaminated water.'] },
+  { icon: '⌂', title: 'Earthquake', risk: 'Drop, Cover and Hold On — do not run outside while shaking.', before: ['Secure heavy furniture and make a meeting plan.', 'Keep shoes and a torch near your bed.'], during: ['Drop to hands and knees, cover head and neck, hold on.', 'Stay away from windows; do not use lifts.'], after: ['Check for injuries, gas leaks and damaged wiring.', 'Expect aftershocks and follow official updates.'] },
+  { icon: '◌', title: 'Cyclone', risk: 'Shelter inside, away from windows and loose objects.', before: ['Charge devices and bring outdoor objects inside.', 'Know the closest official shelter and evacuation route.'], during: ['Stay in an interior room; keep away from glass.', 'Do not go outside during the eye of the storm.'], after: ['Avoid damaged buildings and standing water.', 'Use messages, not calls, to keep networks free.'] },
+  { icon: 'ϟ', title: 'Thunderstorm', risk: 'When thunder roars, go indoors.', before: ['Pause outdoor activities early and secure loose items.', 'Keep a battery light ready for a power cut.'], during: ['Stay inside a substantial building or enclosed vehicle.', 'Avoid plumbing, wired electronics and open areas.'], after: ['Wait 30 minutes after the last thunder before going out.', 'Report fallen power lines to authorities.'] },
+]
+
 function LearningPage() {
-  const topics = [
-    {
-      icon: '🌊',
-      title: 'Flood',
-      description: 'Learn how to stay safe before, during, and after a flood.',
-    },
-    {
-      icon: '🌍',
-      title: 'Earthquake',
-      description: 'Understand earthquake safety and emergency actions.',
-    },
-    {
-      icon: '🌀',
-      title: 'Cyclone',
-      description: 'Learn how to prepare for strong winds and heavy rainfall.',
-    },
-    {
-      icon: '🔥',
-      title: 'Fire',
-      description: 'Learn fire prevention and safe evacuation practices.',
-    },
-    {
-      icon: '⛈️',
-      title: 'Thunderstorm',
-      description: 'Know what to do during lightning and severe storms.',
-    },
-    {
-      icon: '🌡️',
-      title: 'Heatwave',
-      description: 'Learn how to protect yourself during extreme heat.',
-    },
-  ]
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-bold text-gray-900">
-            Disaster<span className="text-blue-600">Safe</span>
-          </Link>
-
-          <Link
-            to="/dashboard"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-            Learning Center
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            Learn how to stay safe
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-gray-600">
-            Explore disaster safety information and learn what to do before,
-            during, and after an emergency.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((topic) => (
-            <div
-              key={topic.title}
-              className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="text-4xl">{topic.icon}</div>
-
-              <h2 className="mt-4 text-xl font-bold text-gray-900">
-                {topic.title}
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-gray-600">
-                {topic.description}
-              </p>
-
-              <button className="mt-5 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50">
-                Learn More
-              </button>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
-  )
+  const [selected, setSelected] = useState(0)
+  const [phase, setPhase] = useState<'before' | 'during' | 'after'>('before')
+  const guide = guides[selected]
+  const actions = guide[phase]
+  return <section className="learning-page">
+    <div className="learning-hero"><div><p className="section-label">Safety learning centre</p><h1>Clear actions, <em>not information overload.</em></h1><p>Built for a stressful moment: choose the hazard, see the phase, and act on the most important steps first.</p></div><Link to="/quizzes" className="primary-button">Test your readiness <span>→</span></Link></div>
+    <section className="guide-workbench"><aside><span>Choose a hazard</span>{guides.map((item, index) => <button key={item.title} className={selected === index ? 'selected' : ''} onClick={() => { setSelected(index); setPhase('before') }}><b>{item.icon}</b>{item.title}<i>→</i></button>)}</aside><div className="guide-content"><div className="guide-header"><div className="guide-symbol">{guide.icon}</div><div><p className="section-label">Practical safety guide</p><h2>{guide.title} safety</h2></div></div><div className="risk-note"><b>Remember</b><span>{guide.risk}</span></div><div className="phase-tabs">{(['before', 'during', 'after'] as const).map((item) => <button key={item} className={phase === item ? 'active' : ''} onClick={() => setPhase(item)}>{item === 'before' ? 'Before' : item === 'during' ? 'During' : 'After'}</button>)}</div><ol className="action-list">{actions.map((action, index) => <li key={action}><b>0{index + 1}</b><span>{action}</span></li>)}</ol><p className="guide-disclaimer">Use official local instructions if they differ from this general guidance.</p></div></section>
+    <section className="learning-bottom"><article><span className="section-label">A safer way to decide</span><h2>Follow the source,<br />then the action.</h2><p>DisasterSafe does not replace emergency services or official instructions. It organises verified alerts and established safety guidance so you can decide faster.</p><Link to="/disasters">Open live monitoring →</Link></article><article className="quiz-prompt"><span>Knowledge check</span><h3>Can you spot the safest next action?</h3><p>Short scenario-based quizzes reinforce the choices that matter under pressure.</p><Link to="/quizzes">Start a quiz →</Link></article></section>
+  </section>
 }
 
 export default LearningPage
